@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+
+<!-- three.js library -->
+<script src='../examples/vendor/three.js/build/three.min.js'></script>
+<script src="../examples/vendor/three.js/examples/js/libs/stats.min.js"></script>
+<!-- ar.js -->
+<script src="../build/ar.js"></script>
+<script>THREEx.ArToolkitContext.baseURL = '../'</script>
+<script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+
+<head>
+ <style>
+  #info {
+    position: absolute;
+    top: 20px;
+    width: 100%;
+    padding: 10px;
+    text-align: center;
+    color: #000000;
+    font-size:36px;
+  }
+
+  #toggle {
+    position:absolute;
+    margin: auto;
+    top: 90px;
+    left:260px;
+    text-align:center;
+    width: 60%;
+    padding: 15px;
+    text-align: center;
+    color: #000000;
+    font-size:25px;
+  }
+
+  #text{
+     position: absolute;
+    top: 400px;
+    height:100px;
+    width: 100%;
+    padding: 10px;
+    text-align: center;
+    color: #000000;
+    font-size:30px;
+    
+  }
+
+  body {
+    overflow: hidden;
+  }
+
+ </style>
+</head>
+
+
+
+<body style='margin : 0px; overflow: hidden; font-family: Monospace;'>
+<div style='position: absolute; top: 10px; width:100%; text-align: center; z-index: 1;'>
+<div id="info">Luck whele</div>
+<a href="https://github.com/jeromeetienne/AR.js/" target="_blank">AR.js</a>
+  - three.js<br>
+Minimal Version
+<p id='text'>
+color
+</p>
+<button id='toggle'>
+  Turn
+</button>
+</div>
+
+<script>
+
+// global variables
+var renderer, scene, camera;
+var stats;
+var arToolKitSource, arToolKitContext;
+var markerHiro;
+var group;
+var omega=0,isActive=false;
+var angle=0;
+
+
+
+$('#toggle').click(
+ 
+  function(){
+   $('#text').css('color','red');
+    isActive=!isActive;
+  
+  }
+);
+init();
+animate();
+
+
+function init() {
+
+ // init renderer
+ renderer = new THREE.WebGLRenderer({
+  // antialias : true,
+  alpha: true
+ });
+ renderer.setClearColor(new THREE.Color('lightgrey'), 0)
+ // renderer.setPixelRatio( 1/2 );
+ renderer.setSize( window.innerWidth, window.innerHeight );
+ renderer.domElement.style.position = 'absolute'
+ renderer.domElement.style.top = '0px'
+ renderer.domElement.style.left = '0px'
+ document.body.appendChild( renderer.domElement );
+
+ stats = new Stats();
+ document.body.appendChild( stats.dom );
+
+ // init scene and camera
+ scene = new THREE.Scene();
+ 
+ // Create a BASIC camera
+ camera = new THREE.Camera();
+ scene.add(camera);
+
+ ////////////////////////////////////////////////////////////////////////////////
+ //          handle arToolkitSource
+ ////////////////////////////////////////////////////////////////////////////////
+
+ arToolkitSource = new THREEx.ArToolkitSource({
+  // to read from the webcam 
+  sourceType : 'webcam',
+ })
+
+ arToolkitSource.init(function onReady(){
+  onResize()
+ })
+ 
+ // handle resize
+ window.addEventListener('resize', function(){
+  onResize()
+ })
+ function onResize(){
+  arToolkitSource.onResize() 
+  arToolkitSource.copySizeTo(renderer.domElement) 
+  if( arToolkitContext.arController !== null ){
+   arToolkitSource.copySizeTo(arToolkitContext.arController.canvas) 
+  } 
+ }
+ ////////////////////////////////////////////////////////////////////////////////
+ //          initialize arToolkitContext
+ ////////////////////////////////////////////////////////////////////////////////
+ 
+ arToolkitContext = new THREEx.ArToolkitContext({
+  cameraParametersUrl: THREEx.ArToolkitContext.baseURL + '../data/data/camera_para.dat',
+  detectionMode: 'mono',
+  maxDetectionRate: 30,
+  canvasWidth: 80*3,
+  canvasHeight: 60*3,
+ })
+ // initialize it
+ arToolkitContext.init(function onCompleted(){
+  // copy projection matrix to camera
+  camera.projectionMatrix.copy( arToolkitContext.getProjectionMatrix() );
+ })
+
+ markerHiro = addMarkerHiro();
+ scene.add (markerHiro); 
+ 
+}
+ 
+function addMarkerHiro(){
+ let markerRoot = new THREE.Group()
+
+ var artoolkitMarker = new THREEx.ArMarkerControls(arToolkitContext, markerRoot, {
+  type : 'pattern',
+  patternUrl : THREEx.ArToolkitContext.baseURL + '../data/data/patt.hiro'
+ })
+ 
+ /*var ball = new THREE.Mesh(new THREE.SphereGeometry(0.1,20,20),new THREE.MeshNormalMaterial());
+ markerRoot.add(ball);
+ ball.position.y=0.1;
+ var grid = new THREE.GridHelper(1,10,'red','white');
+ markerRoot.add(grid);
+ 
+ var cyl = new THREE.Mesh(new THREE.CylinderGeometry(0.25,0.25,0.5,20,20),new THREE.MeshNormalMaterial());
+ cyl.position.y=0.25;
+ markerRoot.add(cyl);*/
+ group = new THREE.Group();
+ //scene.add (group);
+ let geometry0 = new THREE.CircleGeometry( 34.5/14.2, 32, Math.PI/2, 2*Math.PI/3);
+ let material0 = new THREE.MeshBasicMaterial( { color: 0x00ff00, side: THREE.DoubleSide} );
+ let circle0 = new THREE.Mesh( geometry0, material0 );
+ group.add( circle0 );  
+ 
+ let geometry1 = new THREE.CircleGeometry( 34.5/14.2, 32, Math.PI/2 + 2/3*Math.PI, 2*Math.PI/3);
+ let material1 = new THREE.MeshBasicMaterial( { color: 0xff0000 } );
+ let circle1 = new THREE.Mesh( geometry1, material1 );
+ group.add( circle1 );  
+    
+ let geometry2 = new THREE.CircleGeometry( 34.5/14.2, 32, Math.PI/2 - 2/3*Math.PI, 2*Math.PI/3);
+ let material2 = new THREE.MeshBasicMaterial( { color: 0x0000ff } );
+ let circle2 = new THREE.Mesh( geometry2, material2 );
+ group.add( circle2 ); 
+ group.position.y=34.5/14.2; 
+ 
+ markerRoot.add(group);
+
+ let geometry = new THREE.CylinderGeometry( 0, 0.3, 2, 8 );
+ let material = new THREE.MeshBasicMaterial( {color: 0x000000} );
+ let cylinder = new THREE.Mesh( geometry, material );
+ //scene.add( cylinder );
+ cylinder.position.y=1;
+ markerRoot.add(cylinder);
+ return markerRoot;
+} 
+
+function animate() {
+ var maxOmega=8;
+ var dt=0.2;
+ 
+ 
+ requestAnimationFrame (animate);
+ stats.update();
+ 
+ if( arToolkitSource.ready === false ) return
+ arToolkitContext.update( arToolkitSource.domElement )
+ 
+ 
+ if(isActive){
+  omega=omega+5*dt;
+ }
+ else{
+  omega=omega-.15*dt;
+ }
+   omega=clamp(omega,maxOmega,0);
+
+ angle=angle+omega*dt;
+ group.rotation.z = angle;
+ //theta-=0.01;
+ /*
+ markerHiro.children[0].position.set(0,34.5/14.2,angle);
+ 
+ //height+=0.01;
+ markerHiro.children[1].position.set(0,34.5/14.2,0);
+ */
+ renderer.render (scene, camera); 
+ 
+ 
+   //group.rotation.z = angle;
+   
+   if(angle%(2*Math.PI)<1/3*Math.PI){
+  $('#text').css('color','red');
+   }
+   else if(angle%(2*Math.PI)<1*Math.PI){
+  $('#text').css('color','green');
+   }
+   else if(angle%(2*Math.PI)<5/3*Math.PI){
+  $('#text').css('color','blue');
+   }
+   else{
+  $('#text').css('color','red');
+   }
+}
+
+function clamp(x,high,low){
+ if(x>high){
+   return high;
+   }
+  else if(x<low){
+   return low;
+  }
+  else return x;
+}
+
+
+</script>
+
+</body>
